@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formation Builder</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="panel">
+    <div class="panel-title">FORMATION BUILDER</div>
+
+    <div class="btn-row">
+      <button id="createFormationBtn" class="btn btn-outline">Create Formation</button>
+      <button id="saveFormationBtn" class="btn btn-primary" disabled>Save Formation</button>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Select a formation</label>
+      <div class="select-wrap">
+        <select id="formationSelect"></select>
+        <svg class="select-caret" viewBox="0 0 24 24" width="16" height="16"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" id="searchLabel">Search a player</label>
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="playerSearch" type="text" placeholder="search player …" autocomplete="off" disabled>
+      </div>
+      <div id="searchResults" class="search-results hidden"></div>
+      <div id="searchHint" class="search-hint">Select a position on the pitch to assign a player.</div>
+    </div>
+
+    <div class="field-group roster-group">
+      <label class="field-label">Squad</label>
+      <div id="roster" class="roster"></div>
+    </div>
+  </aside>
+
+  <main class="stage">
+    <div class="pitch-card">
+      <div class="pitch-card-header">
+        <span class="hdr-left">Formation Builder</span>
+        <span class="hdr-mode" id="modeBadge">SELECTING</span>
+      </div>
+
+      <div class="pitch-wrap">
+        <svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none">
+          <rect x="1" y="1" width="98" height="138" class="line" fill="none"/>
+          <line x1="1" y1="70" x2="99" y2="70" class="line"/>
+          <circle cx="50" cy="70" r="10" class="line" fill="none"/>
+          <circle cx="50" cy="70" r="0.6" class="line-fill"/>
+          <rect x="24" y="1" width="52" height="16" class="line" fill="none"/>
+          <rect x="24" y="123" width="52" height="16" class="line" fill="none"/>
+          <rect x="38" y="1" width="24" height="6" class="line" fill="none"/>
+          <rect x="38" y="133" width="24" height="6" class="line" fill="none"/>
+          <circle cx="50" cy="12" r="0.6" class="line-fill"/>
+          <circle cx="50" cy="128" r="0.6" class="line-fill"/>
+        </svg>
+        <div id="pitch" class="pitch"></div>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<div id="modalOverlay" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Name this formation</div>
+    <input id="modalInput" class="modal-input" type="text" placeholder="e.g. 4-3-3 Custom" autocomplete="off">
+    <div class="modal-actions">
+      <button id="modalCancel" class="btn btn-outline">Cancel</button>
+      <button id="modalConfirm" class="btn btn-primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

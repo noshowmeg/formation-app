@@ -131,7 +131,13 @@
     modalInput: document.getElementById("modalInput"),
     modalConfirm: document.getElementById("modalConfirm"),
     modalCancel: document.getElementById("modalCancel"),
-    toast: document.getElementById("toast")
+    toast: document.getElementById("toast"),
+    fieldBgPicker: document.getElementById("fieldBgPicker"),
+    fieldBgHex: document.getElementById("fieldBgHex"),
+    fieldStripePicker: document.getElementById("fieldStripePicker"),
+    fieldStripeHex: document.getElementById("fieldStripeHex"),
+    fieldLinePicker: document.getElementById("fieldLinePicker"),
+    fieldLineHex: document.getElementById("fieldLineHex")
   };
 
   /* ---------------- Jersey SVG ---------------- */
@@ -165,6 +171,51 @@
           : "") +
       "</svg>"
     );
+  }
+
+  /* ---------------- Pitch color pickers ---------------- */
+
+  const HEX_RE = /^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$/;
+
+  function normalizeHex(v) {
+    const hex = v.trim();
+    if (hex.length === 4) {
+      return "#" + hex.slice(1).split("").map((c) => c + c).join("");
+    }
+    return hex;
+  }
+
+  function initColorPicker(picker, hexInput, cssVar) {
+    picker.addEventListener("input", () => {
+      hexInput.value = picker.value.toUpperCase();
+      hexInput.classList.remove("invalid");
+      document.documentElement.style.setProperty(cssVar, picker.value);
+    });
+
+    hexInput.addEventListener("input", () => {
+      const raw = hexInput.value.trim();
+      if (HEX_RE.test(raw)) {
+        const normalized = normalizeHex(raw);
+        hexInput.classList.remove("invalid");
+        picker.value = normalized;
+        document.documentElement.style.setProperty(cssVar, normalized);
+      } else {
+        hexInput.classList.add("invalid");
+      }
+    });
+
+    hexInput.addEventListener("blur", () => {
+      if (!HEX_RE.test(hexInput.value.trim())) {
+        hexInput.value = picker.value.toUpperCase();
+        hexInput.classList.remove("invalid");
+      }
+    });
+  }
+
+  function initColorPickers() {
+    initColorPicker(els.fieldBgPicker, els.fieldBgHex, "--field");
+    initColorPicker(els.fieldStripePicker, els.fieldStripeHex, "--field-stripe");
+    initColorPicker(els.fieldLinePicker, els.fieldLineHex, "--field-line");
   }
 
   /* ---------------- Helpers ---------------- */
@@ -492,6 +543,7 @@
     renderPitch();
     renderRoster();
     deactivateSlot();
+    initColorPickers();
   }
 
   init();

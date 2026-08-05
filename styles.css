@@ -8,7 +8,8 @@
   --accent: #d9f2c4;
   --accent-ink: #24361b;
   --field: #6b7396;
-  --field-line: rgba(255,255,255,0.55);
+  --field-stripe: #77809f;
+  --field-line: #ffffff;
   --card-radius: 14px;
   --mono: 'Courier New', ui-monospace, Menlo, monospace;
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -42,6 +43,13 @@ body{
 
 @media (max-width: 900px){
   .app{ grid-template-columns: 1fr; }
+}
+
+.panel{
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
 /* ---------- Left panel ---------- */
@@ -230,6 +238,53 @@ body{
   border: 1px solid rgba(0,0,0,0.3);
 }
 
+/* ---------- Pitch color pickers ---------- */
+
+.color-row{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.color-row:last-child{ margin-bottom: 0; }
+
+.color-row-label{
+  width: 78px;
+  flex-shrink: 0;
+  font-size: 12.5px;
+  color: var(--ink-dim);
+}
+
+.color-swatch{
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--panel-line);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.color-swatch::-webkit-color-swatch-wrapper{ padding: 3px; }
+.color-swatch::-webkit-color-swatch{ border: none; border-radius: 4px; }
+.color-swatch::-moz-color-swatch{ border: none; border-radius: 4px; }
+
+.hex-input{
+  flex: 1;
+  min-width: 0;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--panel-line);
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  transition: border-color 0.15s;
+}
+.hex-input:focus{ outline: none; border-color: var(--accent); }
+.hex-input.invalid{ border-color: #e6194b; }
+
 /* ---------- Right stage ---------- */
 
 .pitch-card{
@@ -278,10 +333,10 @@ body{
   background-image:
     repeating-linear-gradient(
       to bottom,
-      rgba(255,255,255,0.05) 0,
-      rgba(255,255,255,0.05) 10%,
-      rgba(0,0,0,0.02) 10%,
-      rgba(0,0,0,0.02) 20%
+      var(--field-stripe) 0,
+      var(--field-stripe) 10%,
+      var(--field) 10%,
+      var(--field) 20%
     );
 }
 

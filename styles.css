@@ -392,12 +392,15 @@ body{
   transition: transform 0.1s ease;
 }
 
-.slot:hover .jersey-svg{ transform: scale(1.08); }
-
 .slot.dragging{ cursor: grabbing; z-index: 20; }
 .slot.dragging .jersey-svg{ transform: scale(1.12); }
 
 .slot.create-mode{ cursor: grab; }
+
+.slot.picked .jersey-svg{
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 0 3px var(--accent)) drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+}
 
 .slot-number{
   position: absolute;

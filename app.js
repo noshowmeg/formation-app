@@ -91,7 +91,8 @@
     mode: "select",                  // 'select' | 'create'
     draftSlots: null,                // working copy while in create mode
     activeSlotIndex: null,           // slot awaiting player assignment
-    drag: null                       // { index, pointerId } while dragging in create mode
+    drag: null,                      // { index, pointerId } while dragging in create mode
+    pickedSlotIndex: null            // slot picked up in create mode, nudgeable with arrow keys
   };
 
   function loadCustomFormations() {
@@ -518,6 +519,7 @@
           activateSlot(i);
         });
       } else {
+        if (state.pickedSlotIndex === i) el.classList.add("picked");
         attachDragHandlers(el, i);
       }
 
@@ -525,8 +527,12 @@
     });
   }
 
-  els.pitchWrap.addEventListener("click", () => {
-    if (state.mode === "select") deactivateSlot();
+  els.pitchWrap.addEventListener("click", (ev) => {
+    if (state.mode === "select") {
+      deactivateSlot();
+    } else if (state.mode === "create" && !ev.target.closest(".slot")) {
+      clearPickedSlot();
+    }
   });
 
   /* ---------------- Selection mode: search & assign ---------------- */
@@ -622,6 +628,7 @@
   function enterCreateMode() {
     state.mode = "create";
     deactivateSlot();
+    state.pickedSlotIndex = null;
     const base = state.formations[state.currentFormationName];
     state.draftSlots = base.map((s) => ({ x: s.x, y: s.y, role: s.role }));
 
@@ -641,6 +648,7 @@
   function exitCreateMode(discard) {
     state.mode = "select";
     state.draftSlots = null;
+    state.pickedSlotIndex = null;
     els.createBtn.textContent = "Create Formation";
     els.createBtn.classList.remove("active");
     els.saveBtn.disabled = true;
@@ -672,6 +680,7 @@
       el.setPointerCapture(ev.pointerId);
       state.drag = { index, pointerId: ev.pointerId };
       el.classList.add("dragging");
+      pickSlot(index);
     });
 
     el.addEventListener("pointermove", (ev) => {
@@ -694,6 +703,52 @@
     }
     el.addEventListener("pointerup", endDrag);
     el.addEventListener("pointercancel", endDrag);
+  }
+
+  /* ---- Picking up a placeholder + nudging it with arrow keys (create mode) ---- */
+
+  function pickSlot(index) {
+    if (state.pickedSlotIndex === index) return;
+    const prevEl = els.pitch.querySelector(".slot.picked");
+    if (prevEl) prevEl.classList.remove("picked");
+    state.pickedSlotIndex = index;
+    const nextEl = els.pitch.querySelector('.slot[data-index="' + index + '"]');
+    if (nextEl) nextEl.classList.add("picked");
+  }
+
+  function clearPickedSlot() {
+    if (state.pickedSlotIndex === null) return;
+    const prevEl = els.pitch.querySelector(".slot.picked");
+    if (prevEl) prevEl.classList.remove("picked");
+    state.pickedSlotIndex = null;
+  }
+
+  const NUDGE_KEYS = {
+    ArrowUp: [0, -1],
+    ArrowDown: [0, 1],
+    ArrowLeft: [-1, 0],
+    ArrowRight: [1, 0]
+  };
+  const NUDGE_STEP = 1.5;
+
+  function initArrowKeyNudge() {
+    document.addEventListener("keydown", (ev) => {
+      if (state.mode !== "create" || state.pickedSlotIndex === null) return;
+      const delta = NUDGE_KEYS[ev.key];
+      if (!delta) return;
+      ev.preventDefault();
+
+      const index = state.pickedSlotIndex;
+      const slot = state.draftSlots[index];
+      slot.x = Math.max(2, Math.min(98, slot.x + delta[0] * NUDGE_STEP));
+      slot.y = Math.max(2, Math.min(98, slot.y + delta[1] * NUDGE_STEP));
+
+      const el = els.pitch.querySelector('.slot[data-index="' + index + '"]');
+      if (el) {
+        el.style.left = slot.x + "%";
+        el.style.top = slot.y + "%";
+      }
+    });
   }
 
   /* ---------------- Save-formation modal ---------------- */
@@ -755,6 +810,7 @@
     initColorPickers();
     initPitchImageUpload();
     initJerseyImageUpload();
+    initArrowKeyNudge();
   }
 
   init();

@@ -126,6 +126,7 @@
     roster: document.getElementById("roster"),
     pitch: document.getElementById("pitch"),
     pitchWrap: document.querySelector(".pitch-wrap"),
+    pitchLines: document.querySelector(".pitch-lines"),
     modeBadge: document.getElementById("modeBadge"),
     modalOverlay: document.getElementById("modalOverlay"),
     modalInput: document.getElementById("modalInput"),
@@ -137,7 +138,14 @@
     fieldStripePicker: document.getElementById("fieldStripePicker"),
     fieldStripeHex: document.getElementById("fieldStripeHex"),
     fieldLinePicker: document.getElementById("fieldLinePicker"),
-    fieldLineHex: document.getElementById("fieldLineHex")
+    fieldLineHex: document.getElementById("fieldLineHex"),
+    colorsDisabledHint: document.getElementById("colorsDisabledHint"),
+    pitchImageInput: document.getElementById("pitchImageInput"),
+    pitchImageReset: document.getElementById("pitchImageReset"),
+    pitchImageName: document.getElementById("pitchImageName"),
+    jerseyImageInput: document.getElementById("jerseyImageInput"),
+    jerseyImageReset: document.getElementById("jerseyImageReset"),
+    jerseyImageName: document.getElementById("jerseyImageName")
   };
 
   /* ---------------- Jersey SVG ---------------- */
@@ -154,23 +162,128 @@
     return "#" + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
   }
 
-  function jerseySVG(color, numberLabel) {
+  function relativeLuminance(hex) {
+    const num = parseInt(hex.slice(1), 16);
+    const r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  }
+
+  function numberTextStyle(color) {
+    return relativeLuminance(color) > 0.6
+      ? { fill: "#22252f", stroke: "rgba(255,255,255,0.55)" }
+      : { fill: "#ffffff", stroke: "rgba(0,0,0,0.3)" };
+  }
+
+  /* ---------------- Jersey template (swap jersey.svg to change artwork) ----------------
+     Drop a new SVG in as formation-app/jersey.svg and reload — no code changes needed.
+     How the auto-recolor works: every solid hex fill in the file is collected, near-white
+     fills (luminance > 0.92, e.g. the sleeve/trim highlight) are left exactly as authored,
+     and the remaining fills are sorted lightest-to-darkest. The lightest becomes the shirt's
+     main color, each darker one gets a progressively darker shade of that same color
+     (collar, piping, shadow details, etc). This means any jersey art following the usual
+     "white base + one or more accent tones" convention drops in with zero JS changes. */
+
+  const JERSEY_SRC = "jersey.svg";
+  const SHADE_STEPS = [-18, -32, -45, -58];
+  let jerseyTemplate = null;
+
+  function isHexColor(v) {
+    return typeof v === "string" && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(v);
+  }
+
+  // Parses raw SVG markup into a jersey template — shared by the default fetch()
+  // load and the "Upload SVG" file picker. Throws on anything that isn't a usable SVG.
+  function parseJerseyTemplate(svgText) {
+    const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
+    const svgEl = doc.querySelector("svg");
+    if (!svgEl || doc.querySelector("parsererror")) throw new Error("Could not parse SVG");
+
+    let viewBox = svgEl.getAttribute("viewBox");
+    if (!viewBox) {
+      const w = parseFloat(svgEl.getAttribute("width")) || 100;
+      const h = parseFloat(svgEl.getAttribute("height")) || 100;
+      viewBox = "0 0 " + w + " " + h;
+    }
+    const [, , vw, vh] = viewBox.split(/\s+/).map(Number);
+
+    const fills = Array.from(svgEl.querySelectorAll("[fill]"))
+      .map((el) => el.getAttribute("fill"))
+      .filter(isHexColor)
+      .map((v) => v.toUpperCase());
+    const colorRoles = Array.from(new Set(fills))
+      .filter((hex) => relativeLuminance(hex) <= 0.92)
+      .sort((a, b) => relativeLuminance(b) - relativeLuminance(a));
+
+    svgEl.removeAttribute("width");
+    svgEl.removeAttribute("height");
+    return { svgEl, viewBox, vw, vh, colorRoles };
+  }
+
+  async function loadJerseyTemplate() {
+    try {
+      const res = await fetch(JERSEY_SRC);
+      if (!res.ok) throw new Error(JERSEY_SRC + " responded with " + res.status);
+      const text = await res.text();
+      jerseyTemplate = parseJerseyTemplate(text);
+    } catch (err) {
+      console.error("Failed to load jersey template (" + JERSEY_SRC + "):", err);
+      jerseyTemplate = null;
+      showToast("Couldn't load jersey.svg — showing a fallback shirt. Serve this app over http:// (not by double-clicking the file) and check the file exists.");
+    }
+  }
+
+  // Minimal built-in shirt used only if jersey.svg fails to load, so slots are never blank.
+  function fallbackJerseySVG(color, numberLabel) {
     const collar = shadeColor(color, -22);
-    const shade = shadeColor(color, -12);
+    const text = numberTextStyle(color);
     return (
       '<svg class="jersey-svg" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
         '<path d="M22 8 L9 18 L15 29 L22 23 L22 55 Q22 59 26 59 L38 59 Q42 59 42 55 L42 23 L49 29 L55 18 L42 8 L36 12 Q32 15.5 28 12 Z" ' +
           'fill="' + color + '" stroke="rgba(0,0,0,0.28)" stroke-width="1.2"/>' +
-        '<path d="M15 29 L9 18 L12.5 15.5 L18.5 26.5 Z" fill="' + shade + '" opacity="0.55"/>' +
-        '<path d="M49 29 L55 18 L51.5 15.5 L45.5 26.5 Z" fill="' + shade + '" opacity="0.55"/>' +
         '<path d="M28 12 Q32 15.5 36 12 L34.5 9 L29.5 9 Z" fill="' + collar + '"/>' +
         (numberLabel !== null && numberLabel !== undefined
-          ? '<text x="32" y="42" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" ' +
-            'font-size="' + (String(numberLabel).length > 2 ? 13 : 17) + '" fill="#ffffff" ' +
-            'stroke="rgba(0,0,0,0.3)" stroke-width="0.6">' + numberLabel + "</text>"
+          ? '<text x="32" y="40" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-weight="700" ' +
+            'font-size="' + (String(numberLabel).length > 2 ? 13 : 17) + '" fill="' + text.fill + '" ' +
+            'stroke="' + text.stroke + '" stroke-width="0.6">' + numberLabel + "</text>"
           : "") +
       "</svg>"
     );
+  }
+
+  function jerseySVG(color, numberLabel) {
+    if (!jerseyTemplate) return fallbackJerseySVG(color, numberLabel);
+
+    const clone = jerseyTemplate.svgEl.cloneNode(true);
+    clone.setAttribute("class", "jersey-svg");
+    clone.querySelectorAll("[fill]").forEach((el) => {
+      const raw = el.getAttribute("fill");
+      if (!isHexColor(raw)) return;
+      const roleIndex = jerseyTemplate.colorRoles.indexOf(raw.toUpperCase());
+      if (roleIndex === -1) return; // near-white base tone — leave untouched
+      const target = roleIndex === 0 ? color : shadeColor(color, SHADE_STEPS[Math.min(roleIndex - 1, SHADE_STEPS.length - 1)]);
+      el.setAttribute("fill", target);
+    });
+
+    if (numberLabel !== null && numberLabel !== undefined) {
+      const text = numberTextStyle(color);
+      const vw = jerseyTemplate.vw, vh = jerseyTemplate.vh;
+      const fontSize = vh * (String(numberLabel).length > 2 ? 0.2 : 0.27);
+      const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      t.setAttribute("x", String(vw * 0.5));
+      t.setAttribute("y", String(vh * 0.39));
+      t.setAttribute("text-anchor", "middle");
+      t.setAttribute("dominant-baseline", "middle");
+      t.setAttribute("font-family", "Arial, sans-serif");
+      t.setAttribute("font-weight", "700");
+      t.setAttribute("font-size", String(fontSize));
+      t.setAttribute("fill", text.fill);
+      t.setAttribute("stroke", text.stroke);
+      t.setAttribute("stroke-width", String(vh * 0.0084));
+      t.textContent = String(numberLabel);
+      clone.appendChild(t);
+    }
+
+    return clone.outerHTML;
   }
 
   /* ---------------- Pitch color pickers ---------------- */
@@ -216,6 +329,101 @@
     initColorPicker(els.fieldBgPicker, els.fieldBgHex, "--field");
     initColorPicker(els.fieldStripePicker, els.fieldStripeHex, "--field-stripe");
     initColorPicker(els.fieldLinePicker, els.fieldLineHex, "--field-line");
+  }
+
+  /* ---------------- Pitch background image upload ---------------- */
+
+  const PITCH_IMAGE_TYPES = ["image/png", "image/jpeg", "image/svg+xml"];
+
+  function setPitchBackgroundControlsEnabled(enabled) {
+    [els.fieldBgPicker, els.fieldBgHex, els.fieldStripePicker, els.fieldStripeHex].forEach((el) => {
+      el.disabled = !enabled;
+    });
+    els.colorsDisabledHint.classList.toggle("hidden", enabled);
+  }
+
+  function clearPitchImage() {
+    els.pitchWrap.style.backgroundImage = "";
+    els.pitchWrap.style.backgroundSize = "";
+    els.pitchWrap.style.backgroundPosition = "";
+    els.pitchWrap.style.backgroundRepeat = "";
+    els.pitchImageInput.value = "";
+    els.pitchImageName.textContent = "No custom image — using generated pitch.";
+    els.pitchImageReset.disabled = true;
+    els.pitchLines.style.display = "";
+    setPitchBackgroundControlsEnabled(true);
+  }
+
+  function initPitchImageUpload() {
+    els.pitchImageInput.addEventListener("change", () => {
+      const file = els.pitchImageInput.files && els.pitchImageInput.files[0];
+      if (!file) return;
+
+      const isAllowedType =
+        PITCH_IMAGE_TYPES.includes(file.type) || /\.(png|jpe?g|svg)$/i.test(file.name);
+      if (!isAllowedType) {
+        showToast("Please upload a PNG, JPEG, or SVG image.");
+        els.pitchImageInput.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        els.pitchWrap.style.backgroundImage = 'url("' + reader.result + '")';
+        els.pitchWrap.style.backgroundSize = "cover";
+        els.pitchWrap.style.backgroundPosition = "center";
+        els.pitchWrap.style.backgroundRepeat = "no-repeat";
+        els.pitchImageName.textContent = file.name;
+        els.pitchImageReset.disabled = false;
+        els.pitchLines.style.display = "none";
+        setPitchBackgroundControlsEnabled(false);
+      };
+      reader.onerror = () => showToast("Couldn't read that image file.");
+      reader.readAsDataURL(file);
+    });
+
+    els.pitchImageReset.addEventListener("click", clearPitchImage);
+  }
+
+  /* ---------------- Placeholder jersey SVG upload ---------------- */
+
+  function initJerseyImageUpload() {
+    els.jerseyImageInput.addEventListener("change", () => {
+      const file = els.jerseyImageInput.files && els.jerseyImageInput.files[0];
+      if (!file) return;
+
+      const isAllowedType = file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
+      if (!isAllowedType) {
+        showToast("Please upload an SVG file.");
+        els.jerseyImageInput.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          jerseyTemplate = parseJerseyTemplate(String(reader.result));
+        } catch (err) {
+          console.error("Failed to parse uploaded jersey SVG:", err);
+          showToast("Couldn't use that SVG — check that it's valid.");
+          els.jerseyImageInput.value = "";
+          return;
+        }
+        els.jerseyImageName.textContent = file.name;
+        els.jerseyImageReset.disabled = false;
+        renderPitch();
+      };
+      reader.onerror = () => showToast("Couldn't read that SVG file.");
+      reader.readAsText(file);
+    });
+
+    els.jerseyImageReset.addEventListener("click", async () => {
+      els.jerseyImageInput.value = "";
+      els.jerseyImageName.textContent = "Using default jersey.svg.";
+      els.jerseyImageReset.disabled = true;
+      await loadJerseyTemplate();
+      renderPitch();
+    });
   }
 
   /* ---------------- Helpers ---------------- */
@@ -538,12 +746,15 @@
 
   /* ---------------- Init ---------------- */
 
-  function init() {
+  async function init() {
+    await loadJerseyTemplate();
     renderFormationOptions();
     renderPitch();
     renderRoster();
     deactivateSlot();
     initColorPickers();
+    initPitchImageUpload();
+    initJerseyImageUpload();
   }
 
   init();

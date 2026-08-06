@@ -82,6 +82,7 @@ body{
   flex: 1;
   transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
 }
+.btn:disabled{ opacity: 0.4; cursor: not-allowed; }
 
 .btn-outline{
   background: rgba(255,255,255,0.06);
@@ -175,6 +176,7 @@ body{
   line-height: 1.4;
 }
 .search-hint.armed{ color: var(--accent); }
+.search-hint.hidden{ display: none; }
 
 .search-results{
   margin-top: 8px;
@@ -285,6 +287,21 @@ body{
 .hex-input:focus{ outline: none; border-color: var(--accent); }
 .hex-input.invalid{ border-color: #e6194b; }
 
+/* ---------- Pitch background image upload ---------- */
+
+.file-upload-row{
+  display: flex;
+  gap: 10px;
+}
+.file-upload-btn{
+  flex: 1;
+  text-align: center;
+}
+#pitchImageReset{
+  flex: none;
+  padding: 11px 16px;
+}
+
 /* ---------- Right stage ---------- */
 
 .pitch-card{
@@ -362,15 +379,15 @@ body{
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 64px;
+  width: 103px;
   cursor: pointer;
   user-select: none;
   touch-action: none;
 }
 
 .slot .jersey-svg{
-  width: 55px;
-  height: 55px;
+  width: 88px;
+  height: auto;
   filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35));
   transition: transform 0.1s ease;
 }

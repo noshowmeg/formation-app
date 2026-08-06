@@ -58,6 +58,28 @@
         <input type="color" id="fieldLinePicker" class="color-swatch" value="#ffffff">
         <input type="text" id="fieldLineHex" class="hex-input" value="#FFFFFF" maxlength="7" spellcheck="false" autocomplete="off">
       </div>
+      <div id="colorsDisabledHint" class="search-hint hidden">Background/Stripe are ignored while a custom pitch image is active.</div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Pitch Background Image</label>
+      <div class="file-upload-row">
+        <label class="btn btn-outline file-upload-btn" for="pitchImageInput">Upload Image</label>
+        <input type="file" id="pitchImageInput" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" hidden>
+        <button id="pitchImageReset" class="btn btn-outline" disabled>Reset</button>
+      </div>
+      <div class="search-hint">Recommended size: 1000 × 1400px (5:7 portrait) to match the pitch shape without stretching.</div>
+      <div id="pitchImageName" class="search-hint">No custom image — using generated pitch.</div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Placeholder Jersey (SVG)</label>
+      <div class="file-upload-row">
+        <label class="btn btn-outline file-upload-btn" for="jerseyImageInput">Upload SVG</label>
+        <input type="file" id="jerseyImageInput" accept=".svg,image/svg+xml" hidden>
+        <button id="jerseyImageReset" class="btn btn-outline" disabled>Reset</button>
+      </div>
+      <div id="jerseyImageName" class="search-hint">Using default jersey.svg.</div>
     </div>
   </aside>
 

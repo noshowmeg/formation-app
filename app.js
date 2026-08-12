@@ -729,7 +729,7 @@
     ArrowLeft: [-1, 0],
     ArrowRight: [1, 0]
   };
-  const NUDGE_STEP = 1.5;
+  const NUDGE_STEP = 0.4;
 
   function initArrowKeyNudge() {
     document.addEventListener("keydown", (ev) => {
